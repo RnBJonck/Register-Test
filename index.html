@@ -1254,78 +1254,7 @@
 
     loadMobileView();
   };
-async function executeApproveSaveEmail() {
-    const empName = document.getElementById('empName').value || 'Employee';
-    const { template, grandTotal, grandOT, period } = generateRegisterHTML();
-    const fileName = `Attendance_Register_${empName.replace(/\s+/g, '_')}_${period.replace(/\s+/g, '_')}.pdf`;
-
-    // Reset scroll offset so html2canvas captures top coordinates correctly
-    window.scrollTo(0, 0);
-
-    // Create visible high z-index overlay so html2canvas can capture rendered elements
-    const exportContainer = document.createElement('div');
-    exportContainer.style.position = 'fixed';
-    exportContainer.style.top = '0';
-    exportContainer.style.left = '0';
-    exportContainer.style.width = '297mm';
-    exportContainer.style.zIndex = '999999';
-    exportContainer.style.background = '#ffffff';
-    exportContainer.style.overflow = 'visible';
-    exportContainer.innerHTML = template;
-    document.body.appendChild(exportContainer);
-
-    // Wait for DOM layout & canvas images to render fully
-    await new Promise(resolve => setTimeout(resolve, 250));
-
-    const opt = {
-      margin:       0,
-      filename:     fileName,
-      image:        { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { 
-        scale: 2, 
-        useCORS: true, 
-        logging: false, 
-        scrollX: 0, 
-        scrollY: 0,
-        windowWidth: 1123,
-        x: 0,
-        y: 0
-      },
-      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' },
-      pagebreak:    { mode: ['css', 'legacy'] }
-    };
-
-    try {
-      await html2pdf().set(opt).from(exportContainer).save();
-    } catch (err) {
-      console.error("PDF generation failed:", err);
-      alert("Notice: Could not automatically render PDF. Opening browser print view instead.");
-      window.print();
-    } finally {
-      if (document.body.contains(exportContainer)) {
-        document.body.removeChild(exportContainer);
-      }
-    }
-
-    const subject = encodeURIComponent(`Attendance Register - ${empName} (${period})`);
-    const bodyText = encodeURIComponent(
-      `Dear Supervisor,\n\n` +
-      `Please find attached my Field Work Attendance Register for ${period}.\n\n` +
-      `Summary of Hours:\n` +
-      `- Total Monthly Hours Worked: ${formatHours(grandTotal)} hrs\n` +
-      `- Total Overtime Claimed: ${formatHours(grandOT)} hrs\n\n` +
-      `Note: The official PDF register ("${fileName}") has been saved to my local downloads folder. I have attached it to this email.\n\n` +
-      `Regards,\n` +
-      `${empName}`
-    );
-
-    let mailUrl = `https://mail.google.com/mail/?view=cm&fs=1&su=${subject}&body=${bodyText}`;
-    
-    window.open(mailUrl, '_blank');
-
-    closePreviewModal();
-  }
-async function executeApproveSaveEmail() {
+  async function executeApproveSaveEmail() {
     const empName = document.getElementById('empName').value || 'Employee';
     const { template, grandTotal, grandOT, period } = generateRegisterHTML();
     const fileName = `Attendance_Register_${empName.replace(/\s+/g, '_')}_${period.replace(/\s+/g, '_')}.pdf`;
