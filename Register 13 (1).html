@@ -1,0 +1,1332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Field Work Attendance Register</title>
+
+  <!-- Include html2pdf library for client-side PDF generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <style>
+    :root {
+      --primary-color: #1a365d;
+      --accent-color: #2563eb;
+      --border-color: #cbd5e1;
+      --bg-header: #f1f5f9;
+      --bg-accent: #f8fafc;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f8fafc;
+      color: #1e293b;
+    }
+
+    /* --- MOBILE APP VIEW --- */
+    .app-viewport {
+      max-width: 500px;
+      margin: 0 auto;
+      background: white;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    .app-header {
+      background-color: var(--primary-color);
+      color: white;
+      padding: 12px 16px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .app-header h1 {
+      margin: 0;
+      font-size: 1rem;
+      text-align: center;
+      letter-spacing: 0.5px;
+    }
+
+    .date-nav-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      background: #e2e8f0;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .date-nav-bar button {
+      background: white;
+      border: 1px solid #94a3b8;
+      border-radius: 4px;
+      padding: 6px 12px;
+      font-weight: 600;
+      color: var(--primary-color);
+      cursor: pointer;
+    }
+
+    .date-nav-bar .btn-today {
+      background: var(--accent-color);
+      color: white;
+      border: none;
+    }
+
+    .current-date-title {
+      font-weight: 700;
+      font-size: 0.95rem;
+      text-align: center;
+    }
+
+    .current-date-sub {
+      font-size: 0.75rem;
+      color: #64748b;
+      text-align: center;
+    }
+
+    .employee-card {
+      padding: 12px 16px;
+      background: var(--bg-accent);
+      border-bottom: 1px solid var(--border-color);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .employee-card .field {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .employee-card label {
+      font-size: 0.62rem;
+      font-weight: 700;
+      color: var(--primary-color);
+    }
+
+    .employee-card input {
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+      padding: 4px;
+      font-size: 0.78rem;
+    }
+
+    /* Signature Canvas Styling */
+    .canvas-container {
+      grid-column: span 2;
+      margin-top: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    #sigCanvas {
+      width: 100%;
+      height: 90px;
+      border: 1.5px dashed #94a3b8;
+      border-radius: 6px;
+      background-color: #ffffff;
+      touch-action: none;
+      cursor: crosshair;
+    }
+
+    .canvas-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .btn-clear-sig {
+      background: #f1f5f9;
+      border: 1px solid #94a3b8;
+      color: #475569;
+      border-radius: 4px;
+      padding: 3px 8px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .sig-status-lbl {
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: #64748b;
+    }
+
+    .daily-card {
+      padding: 16px;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .time-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .input-block {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-block label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: #475569;
+    }
+
+    .input-block input {
+      padding: 8px;
+      border: 1px solid #94a3b8;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      text-align: center;
+    }
+
+    .summary-badge-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .summary-badge {
+      background: var(--bg-header);
+      padding: 8px 4px;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      text-align: center;
+    }
+
+    .summary-badge .val {
+      font-weight: bold;
+      font-size: 0.9rem;
+      color: var(--primary-color);
+    }
+
+    .summary-badge .lbl {
+      font-size: 0.62rem;
+      color: #64748b;
+    }
+
+    .full-width-block {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .full-width-block label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: #475569;
+    }
+
+    .full-width-block input {
+      padding: 8px;
+      border: 1px solid #94a3b8;
+      border-radius: 6px;
+      font-size: 0.85rem;
+    }
+
+    .app-footer {
+      padding: 12px 16px;
+      background: white;
+      border-top: 1px solid var(--border-color);
+      position: sticky;
+      bottom: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .btn-print-main {
+      width: 100%;
+      background: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 6px;
+      font-weight: bold;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+
+    .btn-clear-data {
+      background: transparent;
+      color: #dc2626;
+      border: 1px solid #fca5a5;
+      padding: 6px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      cursor: pointer;
+    }
+
+    /* --- PREVIEW MODAL --- */
+    .preview-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(15, 23, 42, 0.85);
+      z-index: 9999;
+      flex-direction: column;
+    }
+
+    .preview-modal.active {
+      display: flex;
+    }
+
+    .preview-toolbar {
+      background: var(--primary-color);
+      color: white;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    .preview-toolbar h3 {
+      margin: 0;
+      font-size: 0.95rem;
+    }
+
+    .preview-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-modal-close {
+      background: #e2e8f0;
+      color: #1e293b;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+
+    .btn-modal-action {
+      background: #16a34a;
+      color: white;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 4px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+
+    .preview-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .preview-page-frame {
+      background: white;
+      width: 291mm;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      transform-origin: top center;
+    }
+
+    @media (max-width: 1200px) {
+      .preview-page-frame {
+        zoom: 0.55;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .preview-page-frame {
+        zoom: 0.35;
+      }
+    }
+
+    /* --- PRINT & REGISTER TEMPLATE STYLES --- */
+    .print-only-container {
+      display: none;
+    }
+
+    .register-template {
+      background: white;
+      padding: 0;
+      margin: 0;
+      width: 100%;
+    }
+
+    .print-page {
+      width: 291mm;
+      height: 203mm;
+      box-sizing: border-box;
+      padding: 3mm;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      page-break-inside: avoid;
+    }
+
+    .print-page:first-child {
+      page-break-after: always;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.65rem;
+      text-align: center;
+      table-layout: fixed;
+      flex-grow: 1;
+    }
+
+    th, td {
+      border: 1px solid #334155 !important;
+      padding: 1px 2px !important;
+      line-height: 1.1;
+      height: 20px !important;
+      vertical-align: middle;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    th {
+      background-color: #f1f5f9 !important;
+      font-weight: 700;
+      color: #1a365d;
+      font-size: 0.62rem;
+    }
+
+    .header-grid-print {
+      display: grid;
+      grid-template-columns: 2fr 1.5fr 2fr 1.5fr 1.2fr;
+      border: 1px solid #1a365d;
+      background: #f8fafc;
+      margin-bottom: 4px;
+      padding: 2px 6px;
+      gap: 6px;
+    }
+
+    .header-grid-print label {
+      font-size: 0.58rem;
+      color: #1a365d;
+      font-weight: bold;
+    }
+
+    .header-grid-print .val {
+      font-size: 0.72rem;
+      font-weight: bold;
+    }
+
+    .monthly-summary-box-print {
+      border: 1px solid #1a365d;
+      padding: 2px 8px;
+      margin-top: 4px;
+      font-size: 0.72rem;
+      display: flex;
+      justify-content: space-around;
+      font-weight: bold;
+      background: #f8fafc;
+    }
+
+    .supervisor-sign-box {
+      border: 1px solid #334155;
+      margin-top: 4px;
+      padding: 4px 8px;
+      display: grid;
+      grid-template-columns: 2fr 2fr 1fr;
+      gap: 8px;
+      font-size: 0.68rem;
+      background: #f8fafc;
+    }
+
+    .supervisor-sign-box div {
+      display: flex;
+      align-items: flex-end;
+      gap: 4px;
+    }
+
+    .supervisor-sign-box .line {
+      border-bottom: 1px solid #1a365d;
+      flex-grow: 1;
+      height: 12px;
+    }
+
+    .sig-img-print {
+      max-height: 16px !important;
+      max-width: 95% !important;
+      height: auto;
+      width: auto;
+      object-fit: contain;
+      display: block;
+      margin: 0 auto;
+    }
+
+    h2 {
+      font-size: 0.85rem !important;
+      margin-top: 0 !important;
+      margin-bottom: 4px !important;
+      text-align: center;
+      color: #1a365d;
+      letter-spacing: 0.5px;
+    }
+
+    @page {
+      size: A4 landscape;
+      margin: 3mm;
+    }
+
+    @media print {
+      body {
+        background: white;
+      }
+      .app-viewport, .preview-modal {
+        display: none !important;
+      }
+
+      .print-only-container {
+        display: block !important;
+        background: white;
+        padding: 0;
+        margin: 0;
+        width: 100% !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Mobile Screen View -->
+<div class="app-viewport">
+  <div class="app-header">
+    <h1>ATTENDANCE REGISTER</h1>
+  </div>
+
+  <div class="date-nav-bar">
+    <button id="btnPrev">&larr; Prev</button>
+    <div>
+      <div class="current-date-title" id="mobileDateTitle">Today</div>
+      <div class="current-date-sub" id="mobileDateSub">Day X of Y</div>
+    </div>
+    <button class="btn-today" id="btnToday">Today</button>
+    <button id="btnNext">Next &rarr;</button>
+  </div>
+
+  <div class="employee-card">
+    <div class="field">
+      <label>EMPLOYEE</label>
+      <input type="text" id="empName" value="Jason Jonck">
+    </div>
+    <div class="field">
+      <label>RANK</label>
+      <input type="text" id="empRank" value="Provincial Quality Monitor">
+    </div>
+    <div class="field">
+      <label>PROJECT / COMPONENT</label>
+      <input type="text" id="empProject" value="FOPS : Quality and Training">
+    </div>
+    <div class="field">
+      <label>DISTRICT NAME</label>
+      <input type="text" id="empDistrict" value="Garden Route">
+    </div>
+    
+    <div class="canvas-container">
+      <label>DRAW SIGNATURE (FINGER / TOUCH)</label>
+      <canvas id="sigCanvas"></canvas>
+      <div class="canvas-controls">
+        <button type="button" class="btn-clear-sig" onclick="clearCanvas()">Clear Signature</button>
+        <span id="sigStatus" class="sig-status-lbl">No signature drawn</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="daily-card">
+    <div class="time-grid">
+      <div class="input-block">
+        <label>Commence Time</label>
+        <input type="time" id="m_tStart">
+      </div>
+      <div class="input-block">
+        <label>Finish Time</label>
+        <input type="time" id="m_tFinish">
+      </div>
+    </div>
+
+    <div class="time-grid">
+      <div class="input-block">
+        <label>Break 1 OFF</label>
+        <input type="time" id="m_tOff1">
+      </div>
+      <div class="input-block">
+        <label>Break 1 ON</label>
+        <input type="time" id="m_tOn1">
+      </div>
+    </div>
+
+    <div class="time-grid">
+      <div class="input-block">
+        <label>Break 2 OFF</label>
+        <input type="time" id="m_tOff2">
+      </div>
+      <div class="input-block">
+        <label>Break 2 ON</label>
+        <input type="time" id="m_tOn2">
+      </div>
+    </div>
+
+    <div class="summary-badge-container">
+      <div class="summary-badge">
+        <div class="val" id="m_valTotal">0.00 hrs</div>
+        <div class="lbl">Total Hours Worked</div>
+      </div>
+      <div class="summary-badge">
+        <div class="val" id="m_valOT">0.00 hrs</div>
+        <div class="lbl">Overtime</div>
+      </div>
+    </div>
+
+    <div class="full-width-block">
+      <label>Remarks &amp; Areas Worked In</label>
+      <input type="text" id="m_remarks" placeholder="Enter work details...">
+    </div>
+  </div>
+
+  <div class="app-footer">
+    <button class="btn-print-main" onclick="openPreviewModal()">1. Preview &amp; Authorize Register</button>
+    <button class="btn-clear-data" id="btnClearMonth">Clear Month's Saved Data</button>
+  </div>
+</div>
+
+<!-- PREVIEW MODAL -->
+<div class="preview-modal" id="previewModal">
+  <div class="preview-toolbar">
+    <h3>Register Preview &amp; Authorization</h3>
+    <div class="preview-actions">
+      <button class="btn-modal-close" onclick="closePreviewModal()">Close / Edit</button>
+      <button class="btn-modal-action" onclick="executeApproveSaveEmail()">2. Approve, Save PDF &amp; Email</button>
+    </div>
+  </div>
+  <div class="preview-body" id="previewContainer">
+    <!-- Rendered Dynamically -->
+  </div>
+</div>
+
+<!-- PRINT HIDDEN CONTAINER -->
+<div class="print-only-container" id="printOnlyContainer">
+  <!-- Rendered Dynamically -->
+</div>
+
+<script>
+  const OFFICIAL_DAILY_HOURS = 8.0;
+  const months = [
+    "January", "February", "March", "April", "May", "June", 
+    "July", "August", "September", "October", "November", "December"
+  ];
+
+  let currentDate = new Date();
+  let monthData = {};
+  let isSignatureAuthenticated = false;
+
+  /* Canvas Drawing Globals */
+  let canvas, ctx;
+  let isDrawing = false;
+  let hasDrawn = false;
+
+  function initCanvas() {
+    canvas = document.getElementById('sigCanvas');
+    ctx = canvas.getContext('2d');
+
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+
+    ctx.strokeStyle = '#000080';
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    canvas.addEventListener('touchstart', startDrawing, { passive: false });
+    canvas.addEventListener('touchmove', draw, { passive: false });
+    canvas.addEventListener('touchend', stopDrawing);
+
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mouseleave', stopDrawing);
+
+    checkSavedSignature();
+  }
+
+  function getCanvasPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return {
+      x: clientX - rect.left,
+      y: clientY - rect.top
+    };
+  }
+
+  function startDrawing(e) {
+    isDrawing = true;
+    hasDrawn = true;
+    const pos = getCanvasPos(e);
+    ctx.beginPath();
+    ctx.moveTo(pos.x, pos.y);
+    if (e.cancelable) e.preventDefault();
+  }
+
+  function draw(e) {
+    if (!isDrawing) return;
+    const pos = getCanvasPos(e);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+    if (e.cancelable) e.preventDefault();
+  }
+
+  function stopDrawing() {
+    if (isDrawing) {
+      isDrawing = false;
+      saveCanvasSignature();
+    }
+  }
+
+  function saveCanvasSignature() {
+    if (!hasDrawn) return;
+    const dataUrl = canvas.toDataURL('image/png');
+    try {
+      localStorage.setItem('saved_signature_img', dataUrl);
+      updateSignatureStatus(true);
+    } catch(err) {
+      console.error("Failed to save signature to local storage", err);
+    }
+  }
+
+  function clearCanvas() {
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    localStorage.removeItem('saved_signature_img');
+    hasDrawn = false;
+    updateSignatureStatus(false);
+  }
+
+  function checkSavedSignature() {
+    const savedSig = localStorage.getItem('saved_signature_img');
+    if (savedSig) {
+      const img = new Image();
+      img.onload = function() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        hasDrawn = true;
+        updateSignatureStatus(true);
+      };
+      img.src = savedSig;
+    } else {
+      updateSignatureStatus(false);
+    }
+  }
+
+  function updateSignatureStatus(exists) {
+    const statusEl = document.getElementById('sigStatus');
+    if (exists) {
+      statusEl.textContent = '✓ Saved signature ready';
+      statusEl.style.color = '#16a34a';
+    } else {
+      statusEl.textContent = 'No signature drawn';
+      statusEl.style.color = '#64748b';
+    }
+  }
+
+  function getStorageKeys() {
+    const monthKey = `${currentDate.getFullYear()}_${currentDate.getMonth() + 1}`;
+    return {
+      data: `attendance_data_${monthKey}`,
+      meta: `attendance_meta`
+    };
+  }
+
+  function saveToLocalStorage() {
+    try {
+      const keys = getStorageKeys();
+      localStorage.setItem(keys.data, JSON.stringify(monthData));
+      
+      const meta = {
+        name: document.getElementById('empName').value,
+        rank: document.getElementById('empRank').value,
+        project: document.getElementById('empProject').value,
+        district: document.getElementById('empDistrict').value
+      };
+      localStorage.setItem(keys.meta, JSON.stringify(meta));
+    } catch (e) {
+      console.error("Error saving to local storage:", e);
+    }
+  }
+
+  function loadFromLocalStorage() {
+    try {
+      const keys = getStorageKeys();
+      const savedData = localStorage.getItem(keys.data);
+      monthData = savedData ? JSON.parse(savedData) : {};
+
+      const savedMeta = localStorage.getItem(keys.meta);
+      if (savedMeta) {
+        const meta = JSON.parse(savedMeta);
+        if (meta.name) document.getElementById('empName').value = meta.name;
+        if (meta.rank) document.getElementById('empRank').value = meta.rank;
+        if (meta.project) document.getElementById('empProject').value = meta.project;
+        if (meta.district) document.getElementById('empDistrict').value = meta.district;
+      }
+    } catch (e) {
+      console.error("Error loading from local storage:", e);
+      monthData = {};
+    }
+  }
+
+  async function authenticateUser() {
+    if (window.PublicKeyCredential && await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()) {
+      try {
+        const challenge = new Uint8Array(32);
+        window.crypto.getRandomValues(challenge);
+
+        const options = {
+          publicKey: {
+            challenge: challenge,
+            rp: { name: "Attendance Register App" },
+            user: {
+              id: new Uint8Array(16),
+              name: document.getElementById('empName').value || "User",
+              displayName: document.getElementById('empName').value || "User"
+            },
+            pubKeyCredParams: [{ alg: -7, type: "public-key" }],
+            timeout: 60000,
+            authenticatorSelection: { userVerification: "required" }
+          }
+        };
+
+        const credential = await navigator.credentials.create(options);
+        if (credential) return true;
+      } catch (err) {
+        console.warn("Biometric verification bypassed or unavailable.", err);
+      }
+    }
+
+    let savedPin = localStorage.getItem('app_user_pin');
+    if (!savedPin) {
+      savedPin = prompt("Set a 4-digit PIN for signing documents:");
+      if (savedPin && savedPin.trim().length >= 4) {
+        localStorage.setItem('app_user_pin', savedPin.trim());
+      } else {
+        alert("PIN setup required to authorize signature.");
+        return false;
+      }
+    }
+
+    const enteredPin = prompt("Enter your PIN to sign and authorize the register:");
+    return (enteredPin === savedPin);
+  }
+
+  function parseTimeToHours(timeStr) {
+    if (!timeStr || typeof timeStr !== 'string') return null;
+    const parts = timeStr.split(':');
+    if (parts.length < 2) return null;
+    const h = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10);
+    if (isNaN(h) || isNaN(m)) return null;
+    return h + (m / 60.0);
+  }
+
+  function formatHours(val) {
+    if (isNaN(val) || val === null || val === undefined) return '0.00';
+    return val.toFixed(2);
+  }
+
+  function calculateDayHours(row) {
+    if (!row) return { total: 0, ot: 0 };
+    
+    const s = parseTimeToHours(row.tStart);
+    const f = parseTimeToHours(row.tFinish);
+
+    if (s === null || f === null) {
+      return { total: 0, ot: 0 };
+    }
+
+    let gross = f - s;
+    if (gross < 0) gross += 24.0;
+
+    const off1 = parseTimeToHours(row.tOff1);
+    const on1 = parseTimeToHours(row.tOn1);
+    let break1 = 0;
+    if (off1 !== null && on1 !== null) {
+      break1 = on1 - off1;
+      if (break1 < 0) break1 += 24.0;
+    }
+
+    const off2 = parseTimeToHours(row.tOff2);
+    const on2 = parseTimeToHours(row.tOn2);
+    let break2 = 0;
+    if (off2 !== null && on2 !== null) {
+      break2 = on2 - off2;
+      if (break2 < 0) break2 += 24.0;
+    }
+
+    const total = Math.max(0, gross - break1 - break2);
+    const ot = Math.max(0, total - OFFICIAL_DAILY_HOURS);
+
+    return { total, ot };
+  }
+
+  function getDaysInCurrentMonth() {
+    return new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
+  }
+
+  function generateRegisterHTML() {
+    const year = currentDate.getFullYear();
+    const monthIdx = currentDate.getMonth();
+    const daysInMonth = getDaysInCurrentMonth();
+
+    const name = document.getElementById('empName').value;
+    const rank = document.getElementById('empRank').value;
+    const project = document.getElementById('empProject').value;
+    const district = document.getElementById('empDistrict').value;
+    const period = `${months[monthIdx]} ${year}`;
+    const savedSig = localStorage.getItem('saved_signature_img');
+
+    let tbody1 = '', tbody2 = '';
+    let weekStartRow = 1, weekTotal = 0, weekOT = 0;
+    let grandTotal = 0, grandOT = 0;
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateObj = new Date(year, monthIdx, day);
+      const dayOfWeekNum = dateObj.getDay();
+      const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
+
+      const d = monthData[day] || {};
+      const res = calculateDayHours(d);
+
+      weekTotal += res.total;
+      weekOT += res.ot;
+      grandTotal += res.total;
+      grandOT += res.ot;
+
+      // Signature ONLY populated if line has entries
+      const lineCompleted = Boolean(d.tStart || d.tFinish || d.remarks);
+
+      let sigCellHtml = '';
+      if (isSignatureAuthenticated && savedSig && lineCompleted) {
+        sigCellHtml = `<img src="${savedSig}" class="sig-img-print" alt="Signature">`;
+      }
+
+      const rowHtml = `
+        <tr>
+          <td style="width: 4%;">${day}</td>
+          <td style="width: 8%;">${dayName}</td>
+          <td style="width: 8%;">${d.tStart || ''}</td>
+          <td style="width: 7%;">${d.tOff1 || ''}</td>
+          <td style="width: 7%;">${d.tOn1 || ''}</td>
+          <td style="width: 7%;">${d.tOff2 || ''}</td>
+          <td style="width: 7%;">${d.tOn2 || ''}</td>
+          <td style="width: 8%;">${d.tFinish || ''}</td>
+          <td style="width: 7%;">${formatHours(res.total)}</td>
+          <td style="width: 7%;">${formatHours(res.ot)}</td>
+          <td style="width: 20%; font-size:0.58rem;">${d.remarks || ''}</td>
+          <td style="width: 10%;">${sigCellHtml}</td>
+        </tr>
+      `;
+
+      if (day <= 15) {
+        tbody1 += rowHtml;
+        if (day === 15 || dayOfWeekNum === 0) {
+          tbody1 += `
+            <tr style="font-weight:bold; background:#f1f5f9;">
+              <td colspan="8" style="text-align: right; padding-right: 4px;">WEEKLY SUMMARY (Days ${weekStartRow} - ${day}):</td>
+              <td>${formatHours(weekTotal)}</td>
+              <td>${formatHours(weekOT)}</td>
+              <td colspan="2" style="text-align: left; padding-left: 4px;">Weekly Totals</td>
+            </tr>
+          `;
+          weekStartRow = day + 1;
+          weekTotal = 0;
+          weekOT = 0;
+        }
+      } else {
+        if (day === 16 && weekStartRow <= 15) {
+          weekStartRow = 16;
+          weekTotal = res.total;
+          weekOT = res.ot;
+        }
+        tbody2 += rowHtml;
+        if (day === daysInMonth || dayOfWeekNum === 0) {
+          tbody2 += `
+            <tr style="font-weight:bold; background:#f1f5f9;">
+              <td colspan="8" style="text-align: right; padding-right: 4px;">WEEKLY SUMMARY (Days ${weekStartRow} - ${day}):</td>
+              <td>${formatHours(weekTotal)}</td>
+              <td>${formatHours(weekOT)}</td>
+              <td colspan="2" style="text-align: left; padding-left: 4px;">Weekly Totals</td>
+            </tr>
+          `;
+          weekStartRow = day + 1;
+          weekTotal = 0;
+          weekOT = 0;
+        }
+      }
+    }
+
+    const template = `
+      <div class="register-template">
+        <!-- PAGE 1 -->
+        <div class="print-page">
+          <div style="display:flex; flex-direction:column; height:100%;">
+            <h2>FIELD WORK ATTENDANCE REGISTER</h2>
+            <div class="header-grid-print">
+              <div><label>NAME:</label> <div class="val">${name}</div></div>
+              <div><label>RANK:</label> <div class="val">${rank}</div></div>
+              <div><label>PROJECT:</label> <div class="val">${project}</div></div>
+              <div><label>DISTRICT:</label> <div class="val">${district}</div></div>
+              <div><label>PERIOD:</label> <div class="val">${period}</div></div>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th rowspan="2" style="width: 4%;">DATE</th>
+                  <th rowspan="2" style="width: 8%;">DAY</th>
+                  <th rowspan="2" style="width: 8%;">START</th>
+                  <th colspan="4" style="width: 28%;">BREAKS</th>
+                  <th rowspan="2" style="width: 8%;">FINISH</th>
+                  <th colspan="2" style="width: 14%;">HOURS WORKED</th>
+                  <th rowspan="2" style="width: 20%;">REMARKS</th>
+                  <th rowspan="2" style="width: 10%;">SIGN</th>
+                </tr>
+                <tr>
+                  <th style="width: 7%;">OFF</th>
+                  <th style="width: 7%;">ON</th>
+                  <th style="width: 7%;">OFF</th>
+                  <th style="width: 7%;">ON</th>
+                  <th style="width: 7%;">TOTAL</th>
+                  <th style="width: 7%;">OT</th>
+                </tr>
+              </thead>
+              <tbody>${tbody1}</tbody>
+            </table>
+            <div class="supervisor-sign-box">
+              <div><strong>SUPERVISOR NAME:</strong> <span class="line"></span></div>
+              <div><strong>SUPERVISOR SIGNATURE:</strong> <span class="line"></span></div>
+              <div><strong>DATE:</strong> <span class="line"></span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PAGE 2 -->
+        <div class="print-page">
+          <div style="display:flex; flex-direction:column; height:100%;">
+            <h2>FIELD WORK ATTENDANCE REGISTER (Page 2)</h2>
+            <div class="header-grid-print">
+              <div><label>NAME:</label> <div class="val">${name}</div></div>
+              <div><label>RANK:</label> <div class="val">${rank}</div></div>
+              <div><label>PROJECT:</label> <div class="val">${project}</div></div>
+              <div><label>DISTRICT:</label> <div class="val">${district}</div></div>
+              <div><label>PERIOD:</label> <div class="val">${period}</div></div>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th rowspan="2" style="width: 4%;">DATE</th>
+                  <th rowspan="2" style="width: 8%;">DAY</th>
+                  <th rowspan="2" style="width: 8%;">START</th>
+                  <th colspan="4" style="width: 28%;">BREAKS</th>
+                  <th rowspan="2" style="width: 8%;">FINISH</th>
+                  <th colspan="2" style="width: 14%;">HOURS WORKED</th>
+                  <th rowspan="2" style="width: 20%;">REMARKS</th>
+                  <th rowspan="2" style="width: 10%;">SIGN</th>
+                </tr>
+                <tr>
+                  <th style="width: 7%;">OFF</th>
+                  <th style="width: 7%;">ON</th>
+                  <th style="width: 7%;">OFF</th>
+                  <th style="width: 7%;">ON</th>
+                  <th style="width: 7%;">TOTAL</th>
+                  <th style="width: 7%;">OT</th>
+                </tr>
+              </thead>
+              <tbody>${tbody2}</tbody>
+            </table>
+            <div class="monthly-summary-box-print">
+              <div>Total Monthly Hours: <span>${formatHours(grandTotal)}</span> hrs</div>
+              <div>Total Monthly Overtime: <span>${formatHours(grandOT)}</span> hrs</div>
+            </div>
+            <div class="supervisor-sign-box">
+              <div><strong>SUPERVISOR NAME:</strong> <span class="line"></span></div>
+              <div><strong>SUPERVISOR SIGNATURE:</strong> <span class="line"></span></div>
+              <div><strong>DATE:</strong> <span class="line"></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    return { template, grandTotal, grandOT, period };
+  }
+
+  async function openPreviewModal() {
+    const savedSig = localStorage.getItem('saved_signature_img');
+    isSignatureAuthenticated = false;
+
+    if (savedSig) {
+      const authSuccess = await authenticateUser();
+      if (authSuccess) {
+        isSignatureAuthenticated = true;
+      } else {
+        if (!confirm("Authentication failed or cancelled. Proceed to preview WITHOUT signature?")) {
+          return;
+        }
+      }
+    }
+
+    const { template } = generateRegisterHTML();
+    
+    const previewContainer = document.getElementById('previewContainer');
+    previewContainer.innerHTML = `<div class="preview-page-frame" id="pdfExportFrame">${template}</div>`;
+    document.getElementById('printOnlyContainer').innerHTML = template;
+
+    document.getElementById('previewModal').classList.add('active');
+  }
+
+  function closePreviewModal() {
+    document.getElementById('previewModal').classList.remove('active');
+  }
+
+  async function executeApproveSaveEmail() {
+    const empName = document.getElementById('empName').value || 'Employee';
+    const { grandTotal, grandOT, period } = generateRegisterHTML();
+
+    const fileName = `Attendance_Register_${empName.replace(/\s+/g, '_')}_${period.replace(/\s+/g, '_')}.pdf`;
+
+    const element = document.getElementById('pdfExportFrame');
+    const opt = {
+      margin:       0,
+      filename:     fileName,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true, logging: false },
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' },
+      pagebreak:    { mode: ['css', 'legacy'] }
+    };
+
+    try {
+      await html2pdf().set(opt).from(element).save();
+    } catch (err) {
+      console.error("PDF generation failed:", err);
+      alert("Notice: Could not automatically render PDF. Using browser default print setup.");
+      window.print();
+    }
+
+    const subject = encodeURIComponent(`Attendance Register - ${empName} (${period})`);
+    const bodyText = encodeURIComponent(
+      `Dear Supervisor,\n\n` +
+      `Please find attached my Field Work Attendance Register for ${period}.\n\n` +
+      `Summary of Hours:\n` +
+      `- Total Monthly Hours Worked: ${formatHours(grandTotal)} hrs\n` +
+      `- Total Overtime Claimed: ${formatHours(grandOT)} hrs\n\n` +
+      `Note: The official PDF register ("${fileName}") has been saved to my local downloads folder. I have attached it to this email.\n\n` +
+      `Regards,\n` +
+      `${empName}`
+    );
+
+    let mailUrl = `https://mail.google.com/mail/?view=cm&fs=1&su=${subject}&body=${bodyText}`;
+    
+    window.open(mailUrl, '_blank');
+
+    closePreviewModal();
+  }
+
+  function loadMobileView() {
+    loadFromLocalStorage();
+
+    const day = currentDate.getDate();
+    const daysInMonth = getDaysInCurrentMonth();
+    const dayName = currentDate.toLocaleDateString('en-US', { weekday: 'long' });
+    const monthName = months[currentDate.getMonth()];
+    const year = currentDate.getFullYear();
+
+    document.getElementById('mobileDateTitle').textContent = `${dayName}, ${day} ${monthName}`;
+    document.getElementById('mobileDateSub').textContent = `${monthName} ${year} (${day} of ${daysInMonth})`;
+
+    const data = monthData[day] || {};
+    document.getElementById('m_tStart').value = data.tStart || '';
+    document.getElementById('m_tOff1').value = data.tOff1 || '';
+    document.getElementById('m_tOn1').value = data.tOn1 || '';
+    document.getElementById('m_tOff2').value = data.tOff2 || '';
+    document.getElementById('m_tOn2').value = data.tOn2 || '';
+    document.getElementById('m_tFinish').value = data.tFinish || '';
+    document.getElementById('m_remarks').value = data.remarks || '';
+
+    updateDailyCalculations();
+  }
+
+  function saveCurrentDay() {
+    const day = currentDate.getDate();
+    monthData[day] = {
+      tStart: document.getElementById('m_tStart').value,
+      tOff1: document.getElementById('m_tOff1').value,
+      tOn1: document.getElementById('m_tOn1').value,
+      tOff2: document.getElementById('m_tOff2').value,
+      tOn2: document.getElementById('m_tOn2').value,
+      tFinish: document.getElementById('m_tFinish').value,
+      remarks: document.getElementById('m_remarks').value
+    };
+
+    updateDailyCalculations();
+    saveToLocalStorage();
+  }
+
+  function updateDailyCalculations() {
+    const row = {
+      tStart: document.getElementById('m_tStart').value,
+      tOff1: document.getElementById('m_tOff1').value,
+      tOn1: document.getElementById('m_tOn1').value,
+      tOff2: document.getElementById('m_tOff2').value,
+      tOn2: document.getElementById('m_tOn2').value,
+      tFinish: document.getElementById('m_tFinish').value
+    };
+
+    const res = calculateDayHours(row);
+    document.getElementById('m_valOT').textContent = `${formatHours(res.ot)} hrs`;
+    document.getElementById('m_valTotal').textContent = `${formatHours(res.total)} hrs`;
+  }
+
+  window.onload = function() {
+    initCanvas();
+
+    document.getElementById('btnPrev').addEventListener('click', () => {
+      currentDate.setDate(currentDate.getDate() - 1);
+      loadMobileView();
+    });
+
+    document.getElementById('btnNext').addEventListener('click', () => {
+      currentDate.setDate(currentDate.getDate() + 1);
+      loadMobileView();
+    });
+
+    document.getElementById('btnToday').addEventListener('click', () => {
+      currentDate = new Date();
+      loadMobileView();
+    });
+
+    document.getElementById('btnClearMonth').addEventListener('click', () => {
+      if (confirm("Are you sure you want to clear all recorded entries for this month?")) {
+        const keys = getStorageKeys();
+        localStorage.removeItem(keys.data);
+        monthData = {};
+        loadMobileView();
+      }
+    });
+
+    const inputs = ['m_tStart', 'm_tOff1', 'm_tOn1', 'm_tOff2', 'm_tOn2', 'm_tFinish', 'm_remarks'];
+    inputs.forEach(id => {
+      const el = document.getElementById(id);
+      el.addEventListener('input', saveCurrentDay);
+      el.addEventListener('change', saveCurrentDay);
+    });
+
+    ['empName', 'empRank', 'empProject', 'empDistrict'].forEach(id => {
+      const el = document.getElementById(id);
+      el.addEventListener('input', saveToLocalStorage);
+      el.addEventListener('change', saveToLocalStorage);
+    });
+
+    loadMobileView();
+  };
+async function executeApproveSaveEmail() {
+    const empName = document.getElementById('empName').value || 'Employee';
+    const { template, grandTotal, grandOT, period } = generateRegisterHTML();
+    const fileName = `Attendance_Register_${empName.replace(/\s+/g, '_')}_${period.replace(/\s+/g, '_')}.pdf`;
+
+    // Reset scroll offset so html2canvas captures top coordinates correctly
+    window.scrollTo(0, 0);
+
+    // Create visible high z-index overlay so html2canvas can capture rendered elements
+    const exportContainer = document.createElement('div');
+    exportContainer.style.position = 'fixed';
+    exportContainer.style.top = '0';
+    exportContainer.style.left = '0';
+    exportContainer.style.width = '297mm';
+    exportContainer.style.zIndex = '999999';
+    exportContainer.style.background = '#ffffff';
+    exportContainer.style.overflow = 'visible';
+    exportContainer.innerHTML = template;
+    document.body.appendChild(exportContainer);
+
+    // Wait for DOM layout & canvas images to render fully
+    await new Promise(resolve => setTimeout(resolve, 250));
+
+    const opt = {
+      margin:       0,
+      filename:     fileName,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { 
+        scale: 2, 
+        useCORS: true, 
+        logging: false, 
+        scrollX: 0, 
+        scrollY: 0,
+        windowWidth: 1123,
+        x: 0,
+        y: 0
+      },
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' },
+      pagebreak:    { mode: ['css', 'legacy'] }
+    };
+
+    try {
+      await html2pdf().set(opt).from(exportContainer).save();
+    } catch (err) {
+      console.error("PDF generation failed:", err);
+      alert("Notice: Could not automatically render PDF. Opening browser print view instead.");
+      window.print();
+    } finally {
+      if (document.body.contains(exportContainer)) {
+        document.body.removeChild(exportContainer);
+      }
+    }
+
+    const subject = encodeURIComponent(`Attendance Register - ${empName} (${period})`);
+    const bodyText = encodeURIComponent(
+      `Dear Supervisor,\n\n` +
+      `Please find attached my Field Work Attendance Register for ${period}.\n\n` +
+      `Summary of Hours:\n` +
+      `- Total Monthly Hours Worked: ${formatHours(grandTotal)} hrs\n` +
+      `- Total Overtime Claimed: ${formatHours(grandOT)} hrs\n\n` +
+      `Note: The official PDF register ("${fileName}") has been saved to my local downloads folder. I have attached it to this email.\n\n` +
+      `Regards,\n` +
+      `${empName}`
+    );
+
+    let mailUrl = `https://mail.google.com/mail/?view=cm&fs=1&su=${subject}&body=${bodyText}`;
+    
+    window.open(mailUrl, '_blank');
+
+    closePreviewModal();
+  }
+
+</script>
+
+</body>
+</html>
